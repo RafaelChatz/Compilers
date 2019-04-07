@@ -1,0 +1,12 @@
+num=0|1|2|3|4|5|6|7|8|9
+
+expr  -> term expr2
+expr2 -> ^ term expr2
+      |ε
+
+term  -> interc term2
+term2 -> & interc term2
+      |ε
+
+interc -> (expr)
+        |num

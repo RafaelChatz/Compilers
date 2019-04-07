@@ -1,0 +1,110 @@
+/* Simple +/-/* expression language; parser evaluates constant expressions on the fly*/
+/**
+ *  Package and Import Specifications
+ */
+import java.util.*;
+import java_cup.runtime.*;
+
+/**
+ *  Usercode Components
+ */
+parser code {:
+    // Connect this parser to a scanner!
+    Scanner s;
+    Parser(Scanner s){ this.s=s; }
+:}
+
+/* define how to connect to the scanner! */
+scan with {: return s.next_token(); :};
+
+/**
+ *  Symbol Lists
+ */
+
+/* Terminals (tokens returned by the scanner). */
+terminal            SEMI, PLUS, MINUS, TIMES, LPAREN, RPAREN ;
+terminal            COMMA,LEFTCURLY ,RIGHTCURLY,IF,ELSE,PREFIX,SUFFIX,IDENTIFIER;
+terminal String     STRING_LITERAL;        // our scanner provides numbers as strings
+
+/*  Non terminals */
+non terminal  main_class;
+non terminal List<String>  functions,main_function_calls;
+non terminal String function,function_body,param_identifiers,func_identifiers,ifelse,main_call_param_identifiers;
+non terminal String ident_string_or_call,condition,func_call,call_param_identifiers,main_function_call,string_or_call;
+/**
+ *  Precedence Declarations
+ */
+precedence left PLUS, MINUS;
+precedence left TIMES;
+
+/**
+ *  The Grammar Rules
+ */
+
+main_class ::=functions :fsl main_function_calls:mfl {:  System.out.println("public class Main {");
+                                                        System.out.println("\t public static void main(String[] args) {");
+                                                        System.out.println("\t\t System.out.println(" + fsl.get(0) + ");");
+
+                                                        for (int i = 0; i < mfl.size(); i++)
+                                                          System.out.println("\t\t System.out.println(" + mfl.get(i) + ");");
+                                                        System.out.println("\t}\n\n");
+
+                                                        for (int i = fsl.size()-1 ; i > 0; i--)
+                                                          System.out.println("\t " + fsl.get(i) + "\n\n");
+                                                        System.out.println("}");
+
+                                                  :};
+
+functions ::= function:f functions:fsl            {: fsl.add(f); RESULT = fsl; :}
+            | main_function_call:mf                {: List<String> fsl = new ArrayList<String>(); fsl.add(0,mf); RESULT = fsl; :};
+
+
+main_function_calls ::= main_function_call:s main_function_calls:fsl       {:  fsl.add(0,s); RESULT = fsl; :}
+                      |                                                    {: List<String> fsl = new ArrayList<String>(); RESULT = fsl; :};
+
+main_function_call::= IDENTIFIER:name LPAREN main_call_param_identifiers:mids RPAREN
+{:RESULT=name+"("+mids+")";:}
+                    |IDENTIFIER:name LPAREN RPAREN
+{:RESULT=name+"("+")";:};
+
+main_call_param_identifiers ::= string_or_call:cid COMMA main_call_param_identifiers:cids     {: RESULT=cid+","+cids ;:}
+                              | string_or_call:cid                                            {: RESULT=cid ;:};
+
+string_or_call ::=STRING_LITERAL:sl      {: RESULT="\""+sl+"\"" ;:}
+                 |main_function_call:fc           {: RESULT=""+fc ;:};
+
+function ::= IDENTIFIER:name LPAREN param_identifiers:ids RPAREN LEFTCURLY function_body:fcb RIGHTCURLY
+{: RESULT ="public static String "+ name + "(" + ids + ") {\n\t\t"+ fcb +" \n\t}"; :}
+
+          |IDENTIFIER:name LPAREN  RPAREN LEFTCURLY function_body:fcb RIGHTCURLY
+{: RESULT ="public static String "+ name + "("  + ") {\n\t\t"+ fcb +" \n\t}"; :};
+
+
+param_identifiers ::= IDENTIFIER:id COMMA param_identifiers:ids     {: RESULT="String "+id+","+ids ;:}
+                    | IDENTIFIER:id                                 {: RESULT="String " +id;:};
+
+function_body ::= ifelse:ie           {:RESULT="return "+ie+";";:};
+
+
+ifelse ::= IF LPAREN condition:cn RPAREN ifelse:ie1 ELSE ifelse:ie2   {:RESULT="("+cn+"?"+ie1+":"+ie2+")";:}
+         |  func_identifiers:fs                                       {:RESULT=""+fs;:};
+
+condition ::= ident_string_or_call :ids PREFIX condition:cn   {:RESULT=cn +".startsWith("+ ids + ")" ;:}
+            | ident_string_or_call :ids SUFFIX condition:cn   {:RESULT=cn +".endsWith("+ ids + ")" ;:}
+            | ident_string_or_call :ids                       {:RESULT=ids ;:};
+
+
+ident_string_or_call ::=IDENTIFIER:id          {: RESULT=""+id ;:}
+                       |STRING_LITERAL:sl      {: RESULT="\""+sl+"\"" ;:}
+                       |func_call:fc           {: RESULT=""+fc ;:};
+
+func_identifiers  ::= ident_string_or_call :ids PLUS ifelse:fs       {: RESULT="("+ids+ " + " + fs +")";:}
+                    | ident_string_or_call :ids                                {: RESULT=""+ids;:};
+
+
+func_call ::=IDENTIFIER:name LPAREN call_param_identifiers:cids RPAREN
+{: RESULT=name+"("+cids+")" ;:};
+
+
+call_param_identifiers ::= ident_string_or_call:cid COMMA call_param_identifiers:cids     {: RESULT=cid+","+cids ;:}
+                        | ident_string_or_call:cid                                        {: RESULT=cid ;:};
