@@ -1,16 +1,19 @@
+
 import syntaxtree.*;
 import visitor.*;
 import java.io.*;
 
 public class Main {
     public static void main (String [] args){
-    if(args.length != 1){
-        System.err.println("Usage1: java [MainClassName] [file1] [file2] ... [fileN]");        		System.err.println("Usage1: java [MainClassName] -f [Folder]  ");
+    if(args.length < 1){
+        System.err.println("Usage1: java [MainClassName] [file1] [file2] ... [fileN]");
         System.exit(1);
     }
     FileInputStream fis = null;
+    for (int i = 0; i < args.length; i++) {
     try{
-        fis = new FileInputStream(args[0]);
+      	System.out.println("----------------------\n\nJava file : " + args[i]);
+        fis = new FileInputStream(args[i]);
         MiniJavaParser parser = new MiniJavaParser(fis);
         Goal root = parser.Goal();
         System.err.println("Program parsed successfully.");
@@ -24,6 +27,7 @@ public class Main {
 	      TC_Visitor tcv = new TC_Visitor();
 	      root.accept(tcv, st);
         System.err.println("Program's sematic check was successful.");
+        st.offset_calc();
     }
     catch(ParseException ex){
         System.out.println(ex.getMessage());
@@ -40,4 +44,5 @@ public class Main {
         }
     }
   }
+}
 }
