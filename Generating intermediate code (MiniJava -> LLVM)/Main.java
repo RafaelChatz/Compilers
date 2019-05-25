@@ -27,10 +27,10 @@ public class Main {
  	      System.err.println("Program's symbol table populated successfully.");
         st.offset_calc();
 
-        String filename=args[i].substring(0,args[i].indexOf("."))+"ll";
+        String filename=args[i].substring(0,args[i].indexOf("."))+".ll";
         Bw = new BufferedWriter(new FileWriter(filename));
-        LLVM_Visitor llvmv = new LlvmGenVisitor(Bw);
-        root.accept(llvmGVisitor, symTable);
+        LLVM_Visitor llvmv = new LLVM_Visitor(Bw,st);
+        root.accept(llvmv, st);
     }
     catch(ParseException ex){
         System.out.println(ex.getMessage());

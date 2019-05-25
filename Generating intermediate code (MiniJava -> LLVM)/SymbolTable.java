@@ -27,6 +27,14 @@ public class SymbolTable {
   }
 
 
+  public Map<String, Class_contents> get_classes(){
+    return classes;
+  }
+
+  public Map<String, Method_contents> get_current_class_methods(){
+    return current_class.get_methods();
+  }
+  
   public void class_null(){
     current_class=null;
   }
@@ -292,6 +300,8 @@ public boolean check_parents_method(String cl_name ,String name){
     return true;
 
   }
+
+
   public boolean checktype(String name1,String name2){
     if(name1.equals(name2))
       return true;
